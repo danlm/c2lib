@@ -1,0 +1,6 @@
+This is c2lib from http://www.annexia.org/freeware/c2lib/
+  
+c2lib is a library of basic tools for use by C programmers. It contains
+features heavily influenced by both Perl's string handling and C++'s
+Standard Template Library (STL). The library has been designed to be very
+easy to use and is fully documented in manual pages.

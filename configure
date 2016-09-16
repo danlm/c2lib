@@ -1,0 +1,66 @@
+#!/bin/sh -
+#
+# This is make+. Make+ is a set of scripts which enhance GNU make and
+# let you build RPMs, and other packages types with just one control
+# file. Read more at http://www.annexia.org/freeware/makeplus/
+#
+# The original author is Richard W.M. Jones <rich@annexia.org>.
+#
+# This software has been explicitly placed in the PUBLIC DOMAIN.  You
+# do not need any sort of license or agreement to use or copy this
+# software. You may also copyright this software yourself, and/or
+# relicense it under any terms you want, at any time and at no cost.
+# This allows you (among other things) to include this software with
+# other packages so that the user does not need to download and
+# install make+ separately.
+
+mp_options=""
+
+usage ()
+{
+    cat <<EOF
+./configure [--options]
+
+Installation directory options:
+  --prefix=PREFIX       Installation prefix [default: /usr/local]
+  --sysconfdir=SYSCONF  Installation prefix for configuration files
+                         [default: PREFIX/etc]
+  --localstatedir=STATE Installation prefix for writable files
+                         [default: PREFIX/var]
+
+Help options:
+  --help                Display this help and exit.
+  --print-mp-cmd        Display the make+ command and exit (use as final arg)
+EOF
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    opt=$1 ; shift
+
+    case "$opt" in
+	--help)
+	    usage
+	    ;;
+	--print-mp-cmd)
+	    echo "rm -f build-\*/config.mk"
+	    echo "make+ $mp_options configure"
+	    exit 0
+	    ;;
+	--*prefix|--*dir)
+	    opt=`echo $opt | sed 's/^--//'`
+	    arg=$1 ; shift
+	    mp_options="$mp_options $opt=$arg"
+	    ;;
+	--*prefix=*|--*dir=*)
+	    opt=`echo $opt | sed 's/^--//'`
+	    mp_options="$mp_options $opt"
+	    ;;
+	*)
+	    mp_options="$mp_options $opt"
+	    ;;
+    esac
+done
+
+rm -f build-*/config.mk
+make+ $mp_options configure

@@ -1,0 +1,171 @@
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta name="Content-Style" content="text/css">
+<title>pgetline</title>
+</head>
+<body>
+
+<h1 align=center>pgetline</h1>
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#LICENSE">LICENSE</a><br>
+<a href="#VERSION">VERSION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+<!-- Creator     : groff version 1.17.2 -->
+<!-- CreationDate: Fri May  3 14:57:24 2002 -->
+<a name="NAME"></a>
+<h2>NAME</h2>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+pgetline, pgetlinex, pgetlinec - read a line from a file, optionally removing comments</td></table>
+<a name="SYNOPSIS"></a>
+<h2>SYNOPSIS</h2>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<pre><b>#include &lt;pstring.h&gt;
+
+char *pgetline (pool, FILE *fp, char *line);
+char *pgetlinex (pool, FILE *fp, char *line, const char *comment_set, int flags);
+#define pgetlinec(p,fp,line) pgetlinex ((p), (fp), (line),</b> <i>#&quot;,</i><b>0)&quot;
+</b></pre></td></table>
+<a name="DESCRIPTION"></a>
+<h2>DESCRIPTION</h2>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>pgetline</b> reads a single line from a file and returns
+it. It allocates enough space to read lines of arbitrary'
+and '0) are length. Line ending characters (' automatically
+removed from the end of the line.</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+The <b>pool</b> argument is a pool for allocating the line.
+The <b>fp</b> argument is the C <b>FILE</b> pointer. The
+<b>line</b> argument is a pointer to a string allocated in
+pool which will be reallocated and filled with the contents
+of the line. You may pass <b>line</b> as <b>NULL</b> to get
+a newly allocated buffer.</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+Use <b>pgetline</b> in one of the following two
+ways:</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>line = pgetline (pool, fp, line);</b></td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+or</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>line = pgetline (pool, fp, NULL);</b></td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>pgetlinex</b> is a more advanced function which reads a
+line from a file, optionally removing comments,
+concatenating together lines which have been split with a
+backslash, and ignoring blank lines. <b>pgetlinex</b> (and
+the related macro <b>pgetlinec</b>) are very useful for
+reading lines of input from a configuration
+file.</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+The <b>pool</b> argument is a pool for allocating the line.
+The <b>fp</b> argument is the C <b>FILE</b> pointer. The
+<b>line</b> argument is a buffer allocated in pool which
+will be reallocated and filled with the result.
+<b>comment_set</b> is the set of possible comment characters
+-- eg. <b>&quot;#!&quot;</b> to allow either <b>#</b> or
+<b>!</b> to be used to introduce comments. <b>flags</b> is
+zero or more of the following flags OR-ed
+together:</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>PGETL_NO_CONCAT</b>: Don't concatenate lines which have
+been split with trailing backslash characters.</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>PGETL_INLINE_COMMENTS</b>: Treat everything following a
+comment character as a comment. The default is to only allow
+comments which appear on a line on their own.</td></table>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>pgetlinec</b> is a helper macro which calls
+<b>pgetlinex</b> with <b>comment_set == &quot;#&quot;</b>
+and <b>flags == 0</b>.</td></table>
+<a name="AUTHOR"></a>
+<h2>AUTHOR</h2>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+Richard Jones &lt;rich@annexia.org&gt;</td></table>
+<a name="LICENSE"></a>
+<h2>LICENSE</h2>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+GNU LGPL (see http://www.gnu.org/)</td></table>
+<a name="VERSION"></a>
+<h2>VERSION</h2>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+c2lib-1.2.13</td></table>
+<a name="SEE ALSO"></a>
+<h2>SEE ALSO</h2>
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td><td width="90%">
+<b>pmatch(3)</b>.</td></table>
+<hr>
+</body>
+</html>

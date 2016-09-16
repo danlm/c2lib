@@ -1,0 +1,38 @@
+README for make+
+----------------
+
+This package uses 'make+' - the sane replacement for autoconf/automake.
+
+Bundled along with this package you should find a makeplus-NNN/
+subdirectory.  This contains the version of makeplus which was used
+when this package was created. You now have three choices:
+
+1. If you already have a recent version of make+ installed on your
+computer, then just ignore this subdirectory. You should be able to
+build this package just by doing:
+
+	./configure
+	make+
+	make+ test
+	make+ install		# As root
+
+2. If you do not have make+ installed or you want to use the bundled
+version of make+ because it is newer, then you can do:
+
+	MAKEPLUS_HOME=`pwd`/makeplus-* ; export MAKEPLUS_HOME
+
+	oldpath=$PATH
+	PATH=$MAKEPLUS_HOME:$PATH ; export PATH
+
+	./configure
+	make+
+	make+ test
+	make+ install		# As root
+
+	PATH=$oldpath
+
+3. Or you can go to the website to download the latest version of
+make+, install it and then proceed with the instructions in (1)
+above. The website is:
+
+	http://www.annexia.org/freeware/makeplus/

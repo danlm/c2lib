@@ -1,0 +1,852 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>c2lib documentation index</title>
+    <style type="text/css"><!--
+      h1 {
+      text-align: center;
+      }
+      pre {
+      background-color: #eeeeff;
+      }
+      code {
+      color: green;
+      font-weight: bold;
+      }
+      --></style>
+  </head>
+
+  <body bgcolor="#ffffff">
+    <h1>c2lib documentation index</h1>
+
+    <p>
+      <code>c2lib</code> is a library of basic tools for use by C
+      programmers. It contains features heavily influenced by
+      both Perl's string handling and C++'s Standard Template
+      Library (STL).
+    </p>
+
+    <p>
+      The primary aims of <code>c2lib</code> are:
+    </p>
+
+    <ul>
+      <li> Be very simple to use.
+      <li> Provide rich abstract data types (ADTs) for C programmers
+	to use.
+      <li> Provide some of the advantages of Perl with only
+	around a factor of 2-3 code-size expansion over Perl itself.
+      <li> Retain most of the efficiency advantages of C.
+      <li> Remain compatible with existing libc functions (particularly
+	existing string and regular expression functions).
+      <li> Clean, fully documented API.
+    </ul>
+
+    <h2>Tutorial and programming examples</h2>
+
+    <h3>Join a list of strings and print</h3>
+
+<pre>
+   #include &lt;pool.h&gt;
+   #include &lt;pstring.h&gt;
+  
+   const char *strings[] = { "John", "Paul", "George", "Ringo" };
+5 
+   main ()
+   {
+     pool pool = global_pool;
+     vector v = pvectora (pool, strings, 4);
+10   printf ("Introducing the Beatles: %s\n", pjoin (pool, v, ", "));
+   }
+</pre>
+
+    <p>
+      When run, this program prints:
+    </p>
+
+<pre>
+Introducing the Beatles: John, Paul, George, Ringo
+</pre>
+
+    <p>
+      Compare this to the equivalent Perl code:
+    </p>
+
+<pre>
+#!/usr/bin/perl
+
+printf "Introducing the Beatles: %s\n",
+    join(", ", "John", "Paul", "George", "Ringo");
+</pre>
+
+    <p>
+      The <code>pjoin(3)</code> function on line 10 is
+      equivalent to the plain <code>join</code> function
+      in Perl. It takes a list of strings and joins them
+      with a separator string (in this case <code>", "</code>),
+      and creates a new string which is returned and printed.
+    </p>
+
+    <p>
+      The <code>pvectora(3)</code> function (line 9) takes a normal C
+      array of strings and converts it into a <code>c2lib</code>
+      <code>vector</code>. You will find out more about
+      <code>vector</code>s later.
+    </p>
+
+    <p>
+      In this case all our allocations are done in a standard
+      pool which is created automatically before <code>main</code> is
+      called and deleted after <code>main</code> returns. This pool is
+      called <code>global_pool(3)</code>. You will find out
+      more about <code>pool</code>s below.
+    </p>
+
+    <p>
+      Notice that, as with most <code>c2lib</code> programs, there is
+      no need to explicitly deallocate (free) objects once you
+      have finished using them. Almost all of the time, objects
+      are freed automatically for you by the system.
+    </p>
+
+    <h3>A vector of integers</h3>
+
+<pre>
+   #include &lt;pool.h&gt;
+   #include &lt;vector.h&gt;
+   #include &lt;pstring.h&gt;
+   
+5  main ()
+   {
+     pool pool = global_pool;
+     vector v = new_vector (pool, int);
+     int i, prod = 1;
+10 
+     for (i = 1; i &lt;= 10; ++i)
+       vector_push_back (v, i);
+   
+     for (i = 0; i &lt; vector_size (v); ++i)
+15     {
+         int elem;
+   
+         vector_get (v, i, elem);
+         prod *= elem;
+20     }
+   
+     printf ("product of integers: %s = %d\n",
+   	     pjoin (pool, pvitostr (pool, v), " * "),
+   	     prod);
+25 }
+</pre>
+
+    <p>
+      When run:
+    </p>
+
+<pre>
+product of integers: 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 = 3628800
+</pre>
+
+    <p>
+      The call to <code>new_vector(3)</code> on line 8 creates a new
+      vector object (abstract data type). In this case the vector is
+      allocated in the global pool and you have told it that each
+      element of the vector will be of type <code>int</code>. Vectors
+      are arrays which automatically expand when you push elements
+      onto them. This vector behaves very much like a C++ STL
+      <code>vector&lt;int&gt;</code> or a Perl array.
+    </p>
+
+    <p>
+      On lines 11-12, we push the numbers 1 through to 10 into
+      the vector. The <code>vector_push_back(3)</code> function
+      pushes an element onto the end of the vector. There are
+      also <code>vector_pop_back(3)</code> (removes and returns the
+      last element of a vector), <code>vector_push_front(3)</code>
+      and <code>vector_pop_front(3)</code> operations.
+    </p>
+
+    <p>
+      Lines 14-20 show the general pattern for iterating over
+      the elements in a vector. The call to <code>vector_get</code>
+      (line 18) returns the <code>i</code>th element of vector <code>v</code>
+      into variable <code>elem</code>.
+    </p>
+
+    <p>
+      Finally lines 22-24 print out the result. We use the
+      <code>pjoin(3)</code> function again to join the numbers
+      with the string <code>" * "</code> between each pair.
+      Also note the use of the strange <code>pvitostr(3)</code>
+      function. <code>pjoin(3)</code> is expecting a vector
+      of strings (ie. a vector of <code>char *</code>), but
+      we have a vector of <code>int</code>, which is
+      incompatible. The <code>pvitostr(3)</code> function
+      promotes a vector of integers into a vector of strings.
+    </p>
+
+    <p>
+      The <code>c2lib</code> library stores vectors as arrays and
+      reallocates them using <code>prealloc(3)</code> whenever it
+      needs to expand them. This means that certain operations on
+      vectors are efficient, and some other operations are less
+      efficient. Getting an element of a vector or replacing an
+      element in the middle of a vector are both fast O(1) operations,
+      equivalent to the ordinary C index ([]) operator.
+      <code>vector_push_back(3)</code> and
+      <code>vector_pop_back(3)</code> are also fast.  However
+      <code>vector_push_front(3)</code> and
+      <code>vector_pop_front(3)</code> are O(n) operations because
+      they require the library to shift up all the elements in the
+      array by one place. Normally however if your vectors are very
+      short (say, fewer than 100 elements), the speed difference will
+      not be noticable, whereas the productivity gains from using
+      vectors over hand-rolled linked lists or other structures will
+      be large. The <code>vector</code> type also allows you
+      to insert and remove elements in the middle of the array,
+      as shown in the next example below:
+    </p>
+
+<pre>
+   #include &lt;pool.h&gt;
+   #include &lt;vector.h&gt;
+   #include &lt;pstring.h&gt;
+   
+5  main ()
+   {
+     pool pool = global_pool;
+     vector v = pvector (pool,
+   		         "a", "b", "c", "d", "e",
+10 		         "f", "g", "h", "i", "j", 0);
+     const char *X = "X";
+   
+     printf ("Original vector contains: %s\n",
+   	  pjoin (pool, v, ", "));
+15 
+     vector_erase_range (v, 3, 6);
+   
+     printf ("After erasing elements 3-5, vector contains: %s\n",
+   	     pjoin (pool, v, ", "));
+20 
+     vector_insert (v, 3, X);
+     vector_insert (v, 4, X);
+     vector_insert (v, 5, X);
+   
+25   printf ("After inserting 3 Xs, vector contains: %s\n",
+	     pjoin (pool, v, ", "));
+
+     vector_clear (v);
+     vector_fill (v, X, 10);
+30 
+     printf ("After clearing and inserting 10 Xs, vector contains: %s\n",
+   	     pjoin (pool, v, ", "));
+   }
+</pre>
+
+    <p>
+      When run:
+    </p>
+
+<pre>
+Original vector contains: a, b, c, d, e, f, g, h, i, j
+After erasing elements 3-5, vector contains: a, b, c, g, h, i, j
+After inserting 3 Xs, vector contains: a, b, c, X, X, X, g, h, i, j
+After clearing and inserting 10 Xs, vector contains: X, X, X, X, X, X, X, X, X, X
+</pre>
+
+    <p>
+      This example demonstrates the following functions:
+    </p>
+
+    <ul>
+      <li> <code>vector_erase_range(3)</code> which is used
+	to erase a range of elements from the middle of
+	a vector.
+      <li> <code>vector_insert(3)</code> which is used to
+	insert single elements into a vector.
+      <li> <code>vector_clear(3)</code> which completely
+	clears the vector - removing all elements.
+      <li> <code>vector_fill(3)</code> which fills a vector
+	with identical elements.
+    </ul>
+
+    <p>
+      For more information, see the respective manual pages.
+    </p>
+
+    <p>
+      You can store just about anything in a vector: strings,
+      pointers, wide integers, complex structures, etc.  If you do
+      want to directly store large objects in a vector, you must
+      remember that the vector type actually copies those objects into
+      and out of the vector each time you insert, push, get, pop and
+      so on. For some large structures, you may want to store a
+      pointer instead (in fact with strings you have no choice: you
+      are always storing a pointer in the vector itself).
+    </p>
+
+    <h3>Strings are just <code>char *</code></h3>
+
+    <p>
+      <code>c2lib</code> doesn't have a fancy string type.
+      Instead we just use plain old <code>char *</code>. This
+      is possible because pools (see below) mean that we don't
+      need to worry about when to copy or deallocate specific
+      objects.
+    </p>
+
+    <p>
+      The great benefit of using plain <code>char *</code>
+      for strings is that we can continue to use the
+      familiar libc functions such as <code>strcmp(3)</code>,
+      <code>strcpy(3)</code>, <code>strlen(3)</code>, <code>printf(3)</code>
+      and so on, as in the next example.
+    </p>
+
+<pre>
+   #include &lt;assert.h&gt;
+   #include &lt;pstring.h&gt;
+   
+   char *given_name = "Richard";
+5  char *family_name = "Jones";
+   char *email_address = "rich@annexia.org";
+   
+   main ()
+   {
+10   pool pool = global_pool;
+     char *email, *s;
+     vector v;
+   
+     email =
+15     psprintf (pool, "%s %s &lt;%s&gt;", given_name, family_name, email_address);
+   
+     printf ("full email address is: %s\n", email);
+   
+     v = pstrcsplit (pool, email, ' ');
+20 
+     printf ("split email into %d components\n", vector_size (v));
+   
+     vector_get (v, 0, s);
+     printf ("first component is: %s\n", s);
+25   assert (strcmp (s, given_name) == 0);
+   
+     vector_get (v, 1, s);
+     printf ("second component is: %s\n", s);
+     assert (strcmp (s, family_name) == 0);
+30 
+     vector_get (v, 2, s);
+     printf ("third component is: %s\n", s);
+     s = pstrdup (pool, s);
+     s++;
+35   s[strlen(s)-1] = '\0';
+     assert (strcmp (s, email_address) == 0);
+   }
+</pre>
+
+    <p>
+      When run:
+    </p>
+
+<pre>
+full email address is: Richard Jones &lt;rich@annexia.org&gt;
+split email into 3 components
+first component is: Richard
+second component is: Jones
+third component is: &lt;rich@annexia.org&gt;
+</pre>
+
+    <p>
+      Line 15 demonstrates the <code>psprintf(3)</code> function
+      which is like the ordinary <code>sprintf(3)</code>,
+      but is (a) safe, and (b) allocates the string in the
+      pool provided, ensuring that it will be safely deallocated
+      later.
+    </p>
+
+    <p>
+      The <code>pstrcsplit(3)</code> function is similar to the
+      Perl <code>split</code>. It takes a string and splits it
+      into a vector of strings, in this case on the space
+      character. There are also other functions for splitting
+      on a string or on a regular expression.
+    </p>
+
+    <p>
+      The final part of the code, lines 21-36, prints out
+      the components of the split string. The <code>vector_get(3)</code>
+      function is used to pull the strings out of the vector object.
+    </p>
+
+    <p>
+      Notice on line 33 that before we remove the beginning
+      and end &lt; ... &gt; from around the email address,
+      we first duplicate the string using <code>pstrdup(3)</code>.
+      In this case it is not strictly necessary to duplicate
+      the string <code>s</code> because we know that
+      <code>pstrcsplit(3)</code> actually allocates new
+      copies of the strings in the vector which it returns.
+      However in general this is good practice because
+      otherwise we would be modifying the contents of the
+      original vector <code>v</code>.
+    </p>
+
+    <h3>Hashes</h3>
+
+    <p>
+      Hashes give you all the power of Perl's "%" hashes. In
+      fact the way they work is very similar (but more powerful:
+      unlike Perl's hashes the key does not need to be a string).
+    </p>
+
+    <p>
+      In <code>c2lib</code> there are three flavors of hash.
+      However they all work in essentially the same way, and
+      all have exactly the same functionality. The reason for
+      having the three flavors is just to work around an obscure
+      problem with the ANSI C specification!
+    </p>
+
+    <p>
+      The three flavors are:
+    </p>
+
+    <table>
+      <tr>
+	<th> hash </th>
+	<td> A hash of any non-string type to any non-string type. </td>
+      </tr>
+      <tr>
+	<th> sash </th>
+	<td> A hash of <code>char *</code> to <code>char *</code>. </td>
+      </tr>
+      <tr>
+	<th> shash </th>
+	<td> A hash of <code>char *</code> to any non-string type. </td>
+      </tr>
+    </table>
+
+    <p>
+      As with vectors, the phrase "any non-string type" can
+      be simple integers or chars, pointers, or complex large
+      structures if you wish.
+    </p>
+
+    <p>
+      Here is a short program showing you how to use a
+      sash (but note that the same functions are available
+      for all of the other flavors):
+    </p>
+
+<pre>
+   #include &lt;stdio.h&gt;
+   #include &lt;hash.h&gt;
+   #include &lt;pstring.h&gt;
+   
+5  main ()
+   {
+     pool pool = global_pool;
+     sash h = new_sash (pool);
+     char *fruit;
+10   const char *color;
+   
+     sash_insert (h, "banana", "yellow");
+     sash_insert (h, "orange", "orange");
+     sash_insert (h, "apple", "red");
+15   sash_insert (h, "kiwi", "green");
+     sash_insert (h, "grapefruit", "yellow");
+     sash_insert (h, "pear", "green");
+     sash_insert (h, "tomato", "red");
+     sash_insert (h, "tangerine", "orange");
+20 
+     for (;;)
+       {
+         printf ("Please type in the name of a fruit: ");
+         fruit = pgetline (pool, stdin, 0);
+25 
+         if (sash_get (h, fruit, color))
+   	printf ("The color of that fruit is %s.\n", color);
+         else
+   	printf ("Sorry, I don't know anything about that fruit.\n");
+30     }
+   }
+</pre>
+
+    <p>
+      When run:
+    </p>
+
+<pre>
+Please type in the name of a fruit: <b>orange</b>
+The color of that fruit is orange.
+Please type in the name of a fruit: <b>apple</b>
+The color of that fruit is red.
+Please type in the name of a fruit: <b>dragon fruit</b>
+Sorry, I don't know anything about that fruit.
+</pre>
+
+    <p>
+      The sash is allocated on line 8 using the <code>new_sash(3)</code>
+      function.
+    </p>
+
+    <p>
+      We populate the sash using the simple <code>sash_insert(3)</code>
+      functions (lines 12-19).
+    </p>
+
+    <p>
+      The <code>sash_get(3)</code> function retrieves a value
+      (<code>color</code>) from
+      the sash using the key given (<code>fruit</code>). It
+      returns true if a value was found, or false if there
+      was no matching key.
+    </p>
+
+    <p>
+      There are many potentially powerful functions available
+      for manipulating hashes, sashes and shashes (below,
+      <code>*</code> stands for either "h", "s" or "sh"):
+    </p>
+
+    <ul>
+      <li> <code>*ash_exists(3)</code> tells you if a key
+	exists. It is equivalent to the Perl <code>exists</code>
+	function.
+      <li> <code>*ash_erase(3)</code> removes a key. It
+	is equivalent to the Perl <code>delete</code> function.
+      <li> <code>*ash_keys(3)</code> returns all of the
+	keys of a hash in a vector. It is equivalent to the
+	Perl <code>keys</code> function.
+      <li> <code>*ash_values(3)</code> returns all of the
+	values of a hash in a vector. It is equivalent to the
+	Perl <code>values</code> function.
+      <li> <code>*ash_size(3)</code> counts the number of keys.
+    </ul>
+
+    <h3>Advanced used of pools</h3>
+
+    <p>
+      So far we have only touched upon pools, and it may not
+      be clear in the examples above why they don't in fact
+      leak memory. There appears to be no deallocation being
+      done, which is quite counter-intuitive to most C programmers!
+    </p>
+
+    <p>
+      Pools are collections of related objects (where an
+      "object" is some sort of memory allocation).
+    </p>
+
+    <p>
+      In C you are normally responsible for allocating and
+      deallocating every single object, like so:
+    </p>
+
+<pre>
+p = malloc (size);
+
+/* ... use p ... */
+
+free (p);
+</pre>
+
+    <p>
+      However in <code>c2lib</code> we first allocate a pool,
+      then use <code>pmalloc(3)</code> and <code>prealloc(3)</code>
+      to allocate lots of related objects in the pool.
+      At the end of the program, all of the objects can be
+      deleted in one go just by calling <code>delete_pool(3)</code>.
+    </p>
+
+    <p>
+      There is one special pool, called <code>global_pool(3)</code>.
+      This pool is created for you before <code>main</code> is
+      called, and it is deleted for you after <code>main</code>
+      returns (or if <code>exit(3)</code> is called). You don't
+      ever need to worry about deallocating <code>global_pool(3)</code>
+      (in fact, if you try to, your program might core dump).
+    </p>
+
+    <p>
+      Thus most short programs like the ones above should just
+      allocate all objects in <code>global_pool(3)</code>, and
+      never need to worry about deallocating the objects or
+      the pool.
+    </p>
+
+    <p>
+      For larger programs, and programs that are expected to run for a
+      long time like servers, you will need to learn about pools.
+    </p>
+
+    <p>
+      Pools are organised in a hierarchy. This means that you often
+      allocate one pool <i>inside</i> another pool. Here is a
+      common pattern:
+    </p>
+
+<pre>
+main ()
+{
+  /* ... use global_pool for allocations here ... */
+
+  for (;;) /* for each request: */
+    {
+      pool pool = new_subpool (global_pool);
+
+      /* ... process the request using pool ... */
+
+      delete_pool (pool);
+    }
+}
+</pre>
+
+    <p>
+      <code>pool</code> is created as a subpool of
+      <code>global_pool(3)</code> for the duration of
+      the request. At the end of the request the pool
+      (and therefore all objects inside it) is deallocated.
+    </p>
+
+    <p>
+      The advantage of creating <code>pool</code> as a
+      subpool of <code>global_pool(3)</code> is that if
+      the request processing code calls <code>exit(3)</code>
+      in the middle of the request, then <code>global_pool(3)</code>
+      will be deallocated in the normal way and as a consequence
+      of this <code>pool</code> will also be properly deallocated.
+    </p>
+
+    <p>
+      You can also use <code>new_pool(3)</code> to create a
+      completely new top-level pool. There are some rare
+      circumstances when you will need to do this, but
+      generally you should avoid creating pools which are
+      not subpools. If in doubt, always create subpools of
+      <code>global_pool(3)</code> or of the pool immediately
+      "above" you.
+    </p>
+
+    <p>
+      Pools don't just store memory allocations. You can attach
+      other types of objects to pools, or trigger functions which
+      are run when the pool is deallocated. <code>pool_register_fd(3)</code>
+      attaches a file descriptor to a pool, meaning that the file
+      descriptor is closed when the pool is deleted (note
+      however that there is no way to unattach a file descriptor
+      from a pool, so don't go and call <code>close(3)</code>
+      on the file descriptor once you've attached it to
+      a pool. <code>pool_register_cleanup_fn(3)</code>
+      registers your own clean-up function which is called
+      when the pool is deleted. Although you should
+      normally use <code>pmalloc(3)</code> and/or
+      <code>prealloc(3)</code> to allocate objects directly
+      in pools, you can also allocate them normally using
+      <code>malloc(3)</code> and attach them to the pool
+      using <code>pool_register_malloc(3)</code>. The object
+      will be freed up automatically when the pool is
+      deallocated.
+    </p>
+
+    <p>
+      Pools become very important when writing multi-threaded
+      servers using the <code>pthrlib</code> library. Each
+      thread processes a single request or command. A pool
+      is created for every thread, and is automatically
+      deleted when the thread exits. This assumes of course
+      that threads (and hence requests) are short-lived, which
+      is a reasonable assumption for most HTTP-like services.
+    </p>
+
+    <h2>Links to manual pages</h2>
+
+    <p>
+      (These manual pages are not always up to date. For the
+      latest documentation, always consult the manual pages
+      supplied with the latest <code>c2lib</code> package!)
+    </p>
+
+    <h3>Pools</h3>
+
+    <ul>
+      <li> <a href="delete_pool.3.html"><code>delete_pool(3)</code></a> </li>
+      <li> <a href="global_pool.3.html"><code>global_pool(3)</code></a> </li>
+      <li> <a href="new_pool.3.html"><code>new_pool(3)</code></a> </li>
+      <li> <a href="new_subpool.3.html"><code>new_subpool(3)</code></a> </li>
+      <li> <a href="pcalloc.3.html"><code>pcalloc(3)</code></a> </li>
+      <li> <a href="pmalloc.3.html"><code>pmalloc(3)</code></a> </li>
+      <li> <a href="pool_get_stats.3.html"><code>pool_get_stats(3)</code></a> </li>
+      <li> <a href="pool_register_cleanup_fn.3.html"><code>pool_register_cleanup_fn(3)</code></a> </li>
+      <li> <a href="pool_register_fd.3.html"><code>pool_register_fd(3)</code></a> </li>
+      <li> <a href="pool_register_malloc.3.html"><code>pool_register_malloc(3)</code></a> </li>
+      <li> <a href="pool_set_bad_malloc_handler.3.html"><code>pool_set_bad_malloc_handler(3)</code></a> </li>
+      <li> <a href="prealloc.3.html"><code>prealloc(3)</code></a> </li>
+    </ul>
+
+    <h3>Vectors</h3>
+
+    <ul>
+      <li> <a href="copy_vector.3.html"><code>copy_vector(3)</code></a> </li>
+      <li> <a href="new_vector.3.html"><code>new_vector(3)</code></a> </li>
+      <li> <a href="vector_allocated.3.html"><code>vector_allocated(3)</code></a> </li>
+      <li> <a href="vector_clear.3.html"><code>vector_clear(3)</code></a> </li>
+      <li> <a href="vector_compare.3.html"><code>vector_compare(3)</code></a> </li>
+      <li> <a href="vector_element_size.3.html"><code>vector_element_size(3)</code></a> </li>
+      <li> <a href="vector_erase.3.html"><code>vector_erase(3)</code></a> </li>
+      <li> <a href="vector_erase_range.3.html"><code>vector_erase_range(3)</code></a> </li>
+      <li> <a href="vector_fill.3.html"><code>vector_fill(3)</code></a> </li>
+      <li> <a href="vector_get.3.html"><code>vector_get(3)</code></a> </li>
+      <li> <a href="vector_get_ptr.3.html"><code>vector_get_ptr(3)</code></a> </li>
+      <li> <a href="vector_grep.3.html"><code>vector_grep(3)</code></a> </li>
+      <li> <a href="vector_grep_pool.3.html"><code>vector_grep_pool(3)</code></a> </li>
+      <li> <a href="vector_insert.3.html"><code>vector_insert(3)</code></a> </li>
+      <li> <a href="vector_insert_array.3.html"><code>vector_insert_array(3)</code></a> </li>
+      <li> <a href="vector_map.3.html"><code>vector_map(3)</code></a> </li>
+      <li> <a href="vector_map_pool.3.html"><code>vector_map_pool(3)</code></a> </li>
+      <li> <a href="vector_pop_back.3.html"><code>vector_pop_back(3)</code></a> </li>
+      <li> <a href="vector_pop_front.3.html"><code>vector_pop_front(3)</code></a> </li>
+      <li> <a href="vector_push_back.3.html"><code>vector_push_back(3)</code></a> </li>
+      <li> <a href="vector_push_front.3.html"><code>vector_push_front(3)</code></a> </li>
+      <li> <a href="vector_reallocate.3.html"><code>vector_reallocate(3)</code></a> </li>
+      <li> <a href="vector_replace.3.html"><code>vector_replace(3)</code></a> </li>
+      <li> <a href="vector_replace_array.3.html"><code>vector_replace_array(3)</code></a> </li>
+      <li> <a href="vector_reverse.3.html"><code>vector_reverse(3)</code></a> </li>
+      <li> <a href="vector_size.3.html"><code>vector_size(3)</code></a> </li>
+      <li> <a href="vector_sort.3.html"><code>vector_sort(3)</code></a> </li>
+      <li> <a href="vector_swap.3.html"><code>vector_swap(3)</code></a> </li>
+    </ul>
+
+    <h3>Hashes</h3>
+
+    <ul>
+      <li> <a href="copy_hash.3.html"><code>copy_hash(3)</code></a> </li>
+      <li> <a href="copy_sash.3.html"><code>copy_sash(3)</code></a> </li>
+      <li> <a href="copy_shash.3.html"><code>copy_shash(3)</code></a> </li>
+      <li> <a href="hash_erase.3.html"><code>hash_erase(3)</code></a> </li>
+      <li> <a href="hash_exists.3.html"><code>hash_exists(3)</code></a> </li>
+      <li> <a href="hash_get.3.html"><code>hash_get(3)</code></a> </li>
+      <li> <a href="hash_get_buckets_allocated.3.html"><code>hash_get_buckets_allocated(3)</code></a> </li>
+      <li> <a href="hash_get_buckets_used.3.html"><code>hash_get_buckets_used(3)</code></a> </li>
+      <li> <a href="hash_get_ptr.3.html"><code>hash_get_ptr(3)</code></a> </li>
+      <li> <a href="hash_insert.3.html"><code>hash_insert(3)</code></a> </li>
+      <li> <a href="hash_keys.3.html"><code>hash_keys(3)</code></a> </li>
+      <li> <a href="hash_keys_in_pool.3.html"><code>hash_keys_in_pool(3)</code></a> </li>
+      <li> <a href="hash_set_buckets_allocated.3.html"><code>hash_set_buckets_allocated(3)</code></a> </li>
+      <li> <a href="hash_size.3.html"><code>hash_size(3)</code></a> </li>
+      <li> <a href="hash_values.3.html"><code>hash_values(3)</code></a> </li>
+      <li> <a href="hash_values_in_pool.3.html"><code>hash_values_in_pool(3)</code></a> </li>
+      <li> <a href="new_hash.3.html"><code>new_hash(3)</code></a> </li>
+      <li> <a href="new_sash.3.html"><code>new_sash(3)</code></a> </li>
+      <li> <a href="new_shash.3.html"><code>new_shash(3)</code></a> </li>
+      <li> <a href="sash_erase.3.html"><code>sash_erase(3)</code></a> </li>
+      <li> <a href="sash_exists.3.html"><code>sash_exists(3)</code></a> </li>
+      <li> <a href="sash_get.3.html"><code>sash_get(3)</code></a> </li>
+      <li> <a href="sash_get_buckets_allocated.3.html"><code>sash_get_buckets_allocated(3)</code></a> </li>
+      <li> <a href="sash_get_buckets_used.3.html"><code>sash_get_buckets_used(3)</code></a> </li>
+      <li> <a href="sash_insert.3.html"><code>sash_insert(3)</code></a> </li>
+      <li> <a href="sash_keys.3.html"><code>sash_keys(3)</code></a> </li>
+      <li> <a href="sash_keys_in_pool.3.html"><code>sash_keys_in_pool(3)</code></a> </li>
+      <li> <a href="sash_set_buckets_allocated.3.html"><code>sash_set_buckets_allocated(3)</code></a> </li>
+      <li> <a href="sash_size.3.html"><code>sash_size(3)</code></a> </li>
+      <li> <a href="sash_values.3.html"><code>sash_values(3)</code></a> </li>
+      <li> <a href="sash_values_in_pool.3.html"><code>sash_values_in_pool(3)</code></a> </li>
+      <li> <a href="shash_erase.3.html"><code>shash_erase(3)</code></a> </li>
+      <li> <a href="shash_exists.3.html"><code>shash_exists(3)</code></a> </li>
+      <li> <a href="shash_get.3.html"><code>shash_get(3)</code></a> </li>
+      <li> <a href="shash_get_buckets_allocated.3.html"><code>shash_get_buckets_allocated(3)</code></a> </li>
+      <li> <a href="shash_get_buckets_used.3.html"><code>shash_get_buckets_used(3)</code></a> </li>
+      <li> <a href="shash_get_ptr.3.html"><code>shash_get_ptr(3)</code></a> </li>
+      <li> <a href="shash_insert.3.html"><code>shash_insert(3)</code></a> </li>
+      <li> <a href="shash_keys.3.html"><code>shash_keys(3)</code></a> </li>
+      <li> <a href="shash_keys_in_pool.3.html"><code>shash_keys_in_pool(3)</code></a> </li>
+      <li> <a href="shash_set_buckets_allocated.3.html"><code>shash_set_buckets_allocated(3)</code></a> </li>
+      <li> <a href="shash_size.3.html"><code>shash_size(3)</code></a> </li>
+      <li> <a href="shash_values.3.html"><code>shash_values(3)</code></a> </li>
+      <li> <a href="shash_values_in_pool.3.html"><code>shash_values_in_pool(3)</code></a> </li>
+    </ul>
+
+    <h3>Strings and miscellaneous</h3>
+
+    <ul>
+      <li> <a href="pchomp.3.html"><code>pchomp(3)</code></a> </li>
+      <li> <a href="pchrs.3.html"><code>pchrs(3)</code></a> </li>
+      <li> <a href="pconcat.3.html"><code>pconcat(3)</code></a> </li>
+      <li> <a href="pdtoa.3.html"><code>pdtoa(3)</code></a> </li>
+      <li> <a href="pgetline.3.html"><code>pgetline(3)</code></a> </li>
+      <li> <a href="pgetlinec.3.html"><code>pgetlinec(3)</code></a> </li>
+      <li> <a href="pgetlinex.3.html"><code>pgetlinex(3)</code></a> </li>
+      <li> <a href="pitoa.3.html"><code>pitoa(3)</code></a> </li>
+      <li> <a href="pjoin.3.html"><code>pjoin(3)</code></a> </li>
+      <li> <a href="pmatch.3.html"><code>pmatch(3)</code></a> </li>
+      <li> <a href="pmatchx.3.html"><code>pmatchx(3)</code></a> </li>
+      <li> <a href="pmemdup.3.html"><code>pmemdup(3)</code></a> </li>
+      <li> <a href="psort.3.html"><code>psort(3)</code></a> </li>
+      <li> <a href="psprintf.3.html"><code>psprintf(3)</code></a> </li>
+      <li> <a href="pstrcat.3.html"><code>pstrcat(3)</code></a> </li>
+      <li> <a href="pstrcsplit.3.html"><code>pstrcsplit(3)</code></a> </li>
+      <li> <a href="pstrdup.3.html"><code>pstrdup(3)</code></a> </li>
+      <li> <a href="pstrlwr.3.html"><code>pstrlwr(3)</code></a> </li>
+      <li> <a href="pstrncat.3.html"><code>pstrncat(3)</code></a> </li>
+      <li> <a href="pstrndup.3.html"><code>pstrndup(3)</code></a> </li>
+      <li> <a href="pstrresplit.3.html"><code>pstrresplit(3)</code></a> </li>
+      <li> <a href="pstrs.3.html"><code>pstrs(3)</code></a> </li>
+      <li> <a href="pstrsplit.3.html"><code>pstrsplit(3)</code></a> </li>
+      <li> <a href="pstrupr.3.html"><code>pstrupr(3)</code></a> </li>
+      <li> <a href="psubst.3.html"><code>psubst(3)</code></a> </li>
+      <li> <a href="psubstr.3.html"><code>psubstr(3)</code></a> </li>
+      <li> <a href="psubstx.3.html"><code>psubstx(3)</code></a> </li>
+      <li> <a href="ptrim.3.html"><code>ptrim(3)</code></a> </li>
+      <li> <a href="ptrimback.3.html"><code>ptrimback(3)</code></a> </li>
+      <li> <a href="ptrimfront.3.html"><code>ptrimfront(3)</code></a> </li>
+      <li> <a href="pvdtostr.3.html"><code>pvdtostr(3)</code></a> </li>
+      <li> <a href="pvector.3.html"><code>pvector(3)</code></a> </li>
+      <li> <a href="pvectora.3.html"><code>pvectora(3)</code></a> </li>
+      <li> <a href="pvitostr.3.html"><code>pvitostr(3)</code></a> </li>
+      <li> <a href="pvsprintf.3.html"><code>pvsprintf(3)</code></a> </li>
+      <li> <a href="pvxtostr.3.html"><code>pvxtostr(3)</code></a> </li>
+      <li> <a href="pxtoa.3.html"><code>pxtoa(3)</code></a> </li>
+    </ul>
+
+    <h3>Matrix and vector math</h3>
+
+    <ul>
+      <li> <a href="collision_moving_sphere_and_face.3.html"><code>collision_moving_sphere_and_face(3)</code></a> </li>
+
+      <li> <a href="face_translate_along_normal.3.html"><code>face_translate_along_normal(3)</code></a> </li>
+      <li> <a href="identity_matrix.3.html"><code>identity_matrix(3)</code></a> </li>
+      <li> <a href="make_identity_matrix.3.html"><code>make_identity_matrix(3)</code></a> </li>
+      <li> <a href="make_zero_vec.3.html"><code>make_zero_vec(3)</code></a> </li>
+      <li> <a href="new_identity_matrix.3.html"><code>new_identity_matrix(3)</code></a> </li>
+      <li> <a href="new_matrix.3.html"><code>new_matrix(3)</code></a> </li>
+      <li> <a href="new_subvector.3.html"><code>new_subvector(3)</code></a> </li>
+      <li> <a href="new_vec.3.html"><code>new_vec(3)</code></a> </li>
+
+      <li> <a href="new_zero_vec.3.html"><code>new_zero_vec(3)</code></a> </li>
+      <li> <a href="plane_coefficients.3.html"><code>plane_coefficients(3)</code></a> </li>
+      <li> <a href="plane_translate_along_normal.3.html"><code>plane_translate_along_normal(3)</code></a> </li>
+
+      <li> <a href="point_distance_to_face.3.html"><code>point_distance_to_face(3)</code></a> </li>
+      <li> <a href="point_distance_to_line.3.html"><code>point_distance_to_line(3)</code></a> </li>
+      <li> <a href="point_distance_to_line_segment.3.html"><code>point_distance_to_line_segment(3)</code></a> </li>
+      <li> <a href="point_distance_to_plane.3.html"><code>point_distance_to_plane(3)</code></a> </li>
+      <li> <a href="point_face_angle_sum.3.html"><code>point_face_angle_sum(3)</code></a> </li>
+      <li> <a href="point_is_inside_plane.3.html"><code>point_is_inside_plane(3)</code></a> </li>
+      <li> <a href="point_lies_in_face.3.html"><code>point_lies_in_face(3)</code></a> </li>
+      <li> <a href="vec_angle_between.3.html"><code>vec_angle_between(3)</code></a> </li>
+      <li> <a href="vec_dot_product.3.html"><code>vec_dot_product(3)</code></a> </li>
+      <li> <a href="vec_magnitude2d.3.html"><code>vec_magnitude2d(3)</code></a> </li>
+      <li> <a href="vec_magnitude.3.html"><code>vec_magnitude(3)</code></a> </li>
+      <li> <a href="vec_magnitude_in_direction.3.html"><code>vec_magnitude_in_direction(3)</code></a> </li>
+      <li> <a href="vec_normalize2d.3.html"><code>vec_normalize2d(3)</code></a> </li>
+      <li> <a href="vec_normalize.3.html"><code>vec_normalize(3)</code></a> </li>
+      <li> <a href="zero_vec.3.html"><code>zero_vec(3)</code></a> </li>
+    </ul>
+
+    <hr>
+    <address><a href="mailto:rich@annexia.org">Richard Jones</a></address>
+<!-- Created: Wed May  1 19:36:16 BST 2002 -->
+<!-- hhmts start -->
+Last modified: Fri May  2 19:42:09 BST 2002
+<!-- hhmts end -->
+  </body>
+</html>

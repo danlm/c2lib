@@ -1,0 +1,30 @@
+Required packages
+-----------------
+
+Before installing c2lib, you need to make sure you have the following
+packages installed:
+
+cdoc		http://www.annexia.org/freeware/cdoc/
+make+		http://www.annexia.org/freeware/makeplus/
+pcre		http://www.pcre.org/
+
+Building and installing
+-----------------------
+
+./configure  [--prefix=/usr --sysconfdir=/etc]
+make+
+make+ test
+make+ install
+
+See the make+ documentation for additional targets (eg. building RPMs).
+
+Problems
+--------
+
+If the build fails, please examine the following files for clues:
+
+build-*/config.h
+build-*/config.mk
+build-*/config.log
+
+If you discover a bug, please contact the package author.

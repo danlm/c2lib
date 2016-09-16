@@ -1,0 +1,379 @@
+# -*- Makefile -*-
+#
+# This is a make+ file. Make+ is a set of scripts which enhance GNU
+# make and let you build RPMs, and other package types with just one
+# control file.  To build this package you will need to download make+
+# from this site: http://www.annexia.org/freeware/makeplus/
+
+PACKAGE		:= c2lib
+VERSION_MAJOR	:= 1
+VERSION_MINOR 	:= 3.0
+VERSION		:= $(VERSION_MAJOR).$(VERSION_MINOR)
+
+SUMMARY		:= A library of useful functions for C.
+COPYRIGHT	:= GNU LGPL (see http://www.gnu.org/)
+AUTHOR		:= Richard Jones <rich@annexia.org>
+
+define DESCRIPTION
+c2lib is a library of useful functions which augment those found in
+the standard libc. It contains a pool allocator, many string
+functions, STL-like vector and hash types and miscellaneous utilities.
+endef
+
+RPM_REQUIRES	:= pcre >= 3.9
+RPM_GROUP	:= Development/Libraries
+
+CFLAGS		+= -Wall -Werror -g -O2 $(shell pcre-config --cflags) \
+		-D_GNU_SOURCE
+LIBS		+= $(shell pcre-config --libs) -lm
+
+OBJS	:= hash.o matvec.o pool.o pre.o pstring.o tree.o vector.o
+HEADERS	:= $(srcdir)/hash.h $(srcdir)/matvec.h \
+	$(srcdir)/pool.h $(srcdir)/pre.h $(srcdir)/pstring.h \
+	$(srcdir)/tree.h $(srcdir)/vector.h
+
+all:	configure static dynamic manpages syms
+
+# Configure the system.
+
+configure:
+	$(MP_CONFIGURE_START)
+	$(MP_CHECK_HEADERS) assert.h ctype.h fcntl.h regex.h string.h unistd.h
+	$(MP_CHECK_FUNCS) vasprintf
+	$(MP_CONFIGURE_END)
+
+# Build the static library.
+
+static:	libc2.a
+
+libc2.a: $(OBJS)
+	$(MP_LINK_STATIC) $@ $(OBJS)
+
+# Build the dynamic library.
+
+dynamic: libc2.so
+
+libc2.so: $(OBJS)
+	$(MP_LINK_DYNAMIC) $@ $(OBJS)
+
+# Build the manual pages.
+
+manpages: $(srcdir)/*.h
+	if cdoc; then \
+		rm -f *.3; \
+		cdoc \
+			--author '$(AUTHOR)' \
+			--license '$(COPYRIGHT)' \
+			--version '$(PACKAGE)-$(VERSION)' \
+			$^; \
+	fi
+
+# Build the symbols table.
+
+syms: libc2.syms
+
+libc2.syms: libc2.so
+	nm $< | sort | grep -i '^[0-9a-f]' | awk '{print $$1 " " $$3}' > $@
+
+# Test.
+
+test: test_hash test_matvec test_pool test_pre test_pstring test_sash \
+	test_shash test_tree test_vector
+	$(MP_RUN_TESTS) $^
+
+test_hash: test_hash.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_matvec: test_matvec.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_pool: test_pool.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_pre: test_pre.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_pstring: test_pstring.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_sash: test_sash.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_shash: test_shash.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_tree: test_tree.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+test_vector: test_vector.o
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lc2 $(LIBS)
+
+# Install.
+
+install:
+	install -d $(DESTDIR)$(libdir)
+	install -d $(DESTDIR)$(includedir)
+	install -d $(DESTDIR)$(man3dir)
+	install -d $(DESTDIR)$(datadir)/rws/symtabs/
+
+	$(MP_INSTALL_STATIC_LIB) libc2.a
+	$(MP_INSTALL_DYNAMIC_LIB) libc2.so
+	install -m 0644 $(HEADERS) $(DESTDIR)$(includedir)
+	install -m 0644 *.3        $(DESTDIR)$(man3dir)
+	install -m 0644 *.syms     $(DESTDIR)$(datadir)/rws/symtabs/
+
+force:
+
+define WEBSITE
+<% include page_header.msp %>
+
+    <h1>c2lib - a Perl/STL-like library of basics for C</h1>
+
+    <p>
+      c2lib is a library of basic tools for use by C
+      programmers. It contains features heavily influenced
+      by both Perl's string handling and C++'s Standard
+      Template Library (STL). The library has been designed
+      to be very easy to use and is fully documented in
+      manual pages.
+    </p>
+
+    <p>
+      <a href="doc/">There is extensive documentation and
+	a tutorial here.</a>
+    </p>
+
+    <h1>Download</h1>
+
+    <table border="1">
+      <tr>
+	<th> File </th>
+	<th> Format </th>
+	<th> Contents </th>
+      </tr>
+      <tr>
+	<td> <a href="$(PACKAGE)-$(VERSION).tar.gz">$(PACKAGE)-$(VERSION).tar.gz</a> </td>
+	<td> tar.gz </td>
+	<td> Latest source distribution </td>
+      </tr>
+      <tr>
+	<td> <a href="$(PACKAGE)-$(VERSION)-1.i686.rpm">$(PACKAGE)-$(VERSION)-1.i686.rpm</a> </td>
+	<td> i686 binary RPM </td>
+	<td> Binary development libraries, header files, man pages
+	  for Red Hat Linux </td>
+      </tr>
+      <tr>
+	<td> <a href="$(PACKAGE)-$(VERSION)-1.src.rpm">$(PACKAGE)-$(VERSION)-1.src.rpm</a> </td>
+	<td> source RPM </td>
+	<td> Source files for Red Hat Linux </td>
+      </tr>
+    </table>
+
+    <p>
+     Dependencies:
+    </p>
+
+    <ul>
+      <li> You will need to install the <a href="http://www.pcre.org/">Perl
+	  Compatible Regular Expressions (PCRE)</a> library.
+      <li> Since 1.3.0, c2lib requires the <a href="../makeplus/">make+</a>
+	  build system.
+      <li> To rebuild the manual pages which come with the
+	package, you will also need to download
+	<a href="../cdoc/">cdoc</a>.
+    </ul>
+
+    <p>
+      <a href="/cgi-bin/autopatch.pl?dir=c2lib">Patches between versions
+	...</a>
+    </p>
+
+    <h1>News</h1>
+
+<p>
+<b>Sat Dec  7 17:18:02 GMT 2002:</b> Updated to use the
+<a href="../makeplus/">make+</a> build system.
+</p>
+
+<p>
+<b>Mon Nov 25 09:31:37 GMT 2002:</b> Added symbols file for full
+symbol resolution in monolith.
+</p>
+
+  <p>
+    <b>Sun Nov 17 23:31:32 GMT 2002:</b> Debian packages. Added MSP files.
+    <code>pmalloc</code> now initialises memory to <code>0xefefefef</code>
+    so we can catch uninitialised memory problems. Further fixes
+    to compile on RH 7.3. Added <code>vector_push_back_vector</code> etc.
+  </p>
+
+    <p>
+      <b>Tue Oct 15 23:40:42 BST 2002:</b> Multiple bug fixes.
+    </p>
+
+    <p>
+      <b>Sun Oct 13 12:55:08 BST 2002:</b> Added <code>pmap</code>
+      and <code>pgrep</code> functions.
+    </p>
+
+    <p>
+      <b>Tue Oct 8 16:18:02 BST 2002:</b> Fix issues with building on
+      Red Hat Linux 7.3 (thanks to Adam Monsen). The supplied
+      RPM should now install on Red Hat Linux systems.
+    </p>
+
+    <p>
+      <b>Sun Oct  6 18:07:39 BST 2002:</b> Completely rewrote
+      the <code>pstr*split</code> functions so they produce the
+      same results as the Perl equivalents in all the corner
+      cases. Added <code>pstr*split2</code> functions (see
+      the manual pages).
+    </p>
+
+    <p>
+      <b>Sun Oct  6 13:00:39 BST 2002:</b> Added a <code>tree</code>
+      type (required by monolith). Removed the old <code>pmatch*</code> and
+      <code>psubst*</code> functions. These were badly thought
+      out and implemented. Replaced with <code>precomp</code>,
+      <code>prematch</code>, <code>presubst</code> functions
+      which are wrappers around the <a href="http://www.pcre.org/">Perl
+	Compatible Regular Expressions (PCRE)</a> library.
+      <code>pstrresplit</code> has also changed to use PCRE.
+    </p>
+
+    <p>
+      <b>Sat Sep  7 15:24:32 BST 2002:</b> Packages are
+      now available as i686 binary RPMs and source RPMs.
+    </p>
+
+    <h1>Old news and old versions</h1>
+
+    <p>
+      <b>Fri May  2 19:49:25 BST 2002</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.14.tar.gz">c2lib-1.2.14.tar.gz</a> released.
+      Added an extensive tutorial and online manual pages.
+    </p>
+
+    <p>
+      <b>Thu Jun 21 23:12:26 BST 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.12.tar.gz">c2lib-1.2.12.tar.gz</a> released.
+      Fixed <code>psort</code> function and updated documentation.
+    </p>
+
+    <p>
+      <b>Fri Jun 15 15:40:35 BST 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.11.tar.gz">c2lib-1.2.11.tar.gz</a> released.
+      Profiling support. Added <code>pstrncat</code>,
+      <code>psubst</code> and <code>psubstx</code> functions.
+      Fixed a memory leak and did rigorous memory leak
+      checking -- I\'m pretty sure there are none left now.
+      Removed arbitrary limit on number of substring
+      matches in <code>pmatch</code> function.
+      Documentation updates.
+    </p>
+
+    <p>
+      <b>Mon Apr  9 17:18:38 BST 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.8.tar.gz">c2lib-1.2.8.tar.gz</a> released.
+      Documentation fixes.
+    </p>
+
+    <p>
+      <b>Wed Mar 28 14:25:42 BST 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.7.tar.gz">c2lib-1.2.7.tar.gz</a> released.
+      Fixed a problem with calling <code>isspace</code> on
+      Solaris (thanks to Tomonori Manome again).
+    </p>
+
+    <p>
+      <b>Mon Mar 26 12:59:15 BST 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.6.tar.gz">c2lib-1.2.6.tar.gz</a> released.
+      <code>pstrresplit</code> fixed.
+      <code>pvector</code> and <code>pvectora</code> functions
+      added: use these to quickly build vectors from lists of strings.
+      <code>ptrimfront</code>, <code>ptrimback</code> and <code>ptrim</code>
+      functions added for trimming whitespace from strings.
+      <code>pgetline*</code> and <code>pmatch*</code> functions
+      added which make it trivial to read in configuration files.
+      <code>new_subvector</code> added for creating sub-vectors
+      of existing vectors.
+      Some minor const-correctness changes.
+      Documentation updates.
+      Test suite updates.
+    </p>
+
+    <p>
+      <b>Mon Mar 19 11:40:34 GMT 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.3.tar.gz">c2lib-1.2.3.tar.gz</a> released.
+      This adds the <i>shash</i> type: a mapping of strings
+      to anything (another specialized hash).
+      Port to Solaris/Intel and Solaris/Sparc (thanks to
+      Tomonori Manome for this).
+    </p>
+
+    <p>
+      <b>Mon Mar 12 12:12:49 GMT 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.1.tar.gz">c2lib-1.2.1.tar.gz</a> released.
+      This fixes a bug in the way the library was calling
+      <code>pstrcat</code>. Upgrading is highly recommended.
+    </p>
+
+    <p>
+      <b>Fri Mar  9 17:26:45 GMT 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.2.0.tar.gz">c2lib-1.2.0.tar.gz</a> released.
+      The pool allocator has been completely rewritten for this
+      release, and is much more efficient.
+    </p>
+
+    <p>
+      <b>Wed Mar  7 14:56:43 GMT 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.1.12.tar.gz">c2lib-1.1.12.tar.gz</a> released.
+      Added <code>pchrs</code> and <code>pstrs</code> string
+      functions. Added <code>pvsprintf</code>. Changed
+      <code>psprintf</code> to make it much more memory efficient
+      (it uses <code>vasprintf(3)</code> if available).
+      Const-correctness fixes.
+    </p>
+
+    <p>
+      <b>Fri Feb 16 17:46:41 GMT 2001</b>
+    </p>
+
+    <p>
+      <a href="c2lib-1.1.10.tar.gz">c2lib-1.1.10.tar.gz</a> released.
+      All functions are documented in manual pages.
+    </p>
+
+<% include page_footer.msp %>
+endef
+
+upload_website:
+	scp $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)-1.*.rpm \
+	$(PACKAGE)-$(VERSION).bin.tar.gz \
+	10.0.0.248:annexia.org/freeware/$(PACKAGE)/
+	scp index.html \
+	10.0.0.248:annexia.org/freeware/$(PACKAGE)/index.msp
+
+.PHONY:	static dynamic manpages syms
